@@ -70,6 +70,7 @@ function onSuccess(authResults){
 # Extra Innings
 In my use case, my Identity Server expires my tokens after a period of time.  I wanted to capture when my refresh token was going to expire and upon resuming my app, if the expiration time was in the next 10 minutes, I wanted to go ahead and renew the token before the user got into using the app.  
 <br />
+
 To accomplish that, in my `onSuccess` function I did the following:
 ```javascript
 function onSuccess(authResults) {
@@ -79,6 +80,7 @@ function onSuccess(authResults) {
 }
 ```
 <br />
+
 Then in my `resume` event I check the current time against the expiration time (less 10 minutes)  
 
 ```javascript
