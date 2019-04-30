@@ -1,0 +1,12 @@
+/*
+ * Define/Style in your app.tss
+ */
+"Window": {
+	backgroundColor: "#f7f7f7"
+},
+"Window[platform=android]": {
+	theme: "Theme.NoActionBar",
+},
+"#webview": {
+	loading: true
+}
