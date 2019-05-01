@@ -162,12 +162,12 @@ Ti.App.addEventListener('resumed', function(e){	Ti.API.info("APP RESUMED");
 	var tokenExp = moment(Ti.App.Properties.getString('azure-ad-access-token-exp')).format();
 	var currentExp = moment().format();
 	if (currentExp > tokenExp) {
-        adalWidget.authorize(false, onRefreshSuccess, onRefreshError, true, onRefreshCancel);
+        	adalWidget.authorize(false, onRefreshSuccess, onRefreshError, true, onRefreshCancel);
 	} //else no refresh needed, more than 10 minnutes before expiring
 });
 ```
 
-> *Take Note:* that my first parameter is st to `false`.  This keeps the Auth refresh window "in the background".  Also, I have slightly different `onSuccess` and `onError` functions to handle this scenario.  Your results may vary.
+> *Take Note:* that my first parameter is set to `false`.  This keeps the Auth refresh window "in the background".  Also, I have slightly different `onSuccess` and `onError` functions to handle this scenario.  Your results may vary.
 
 <br />
 
