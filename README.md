@@ -42,6 +42,17 @@ function onSuccess(authResults){
 <br /><br />
 
 # Methods
+## *authorize*
+> Opens Login Window with the assigned properties (see below)
+
+<br />
+
+## *close*
+> Close Login Window
+
+<br />
+
+# Properties
 ##  *prompt	    {BOOL}*
 > Show UI
 
