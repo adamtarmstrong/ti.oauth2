@@ -43,16 +43,78 @@ function onSuccess(authResults){
 
 # Methods
 ## *authorize*
-> Opens Login Window with the assigned properties (see below)
+> Open Login Window with the assigned properties (see below)
 
 <br />
 
 ## *close*
 > Close Login Window
 
+<br /><br />
+
+# Properties configured up front
+## *customServer	{BOOL}*
+> `true` - use your own server (be sure to also define `customAuthUrl` & `customTokenUrl`)  
+> `false` - use MS Graph/Azure AD
+
 <br />
 
-# Properties
+## *customAuthUrl	{String}*
+> URL to use for the initial Auth request
+
+<br />
+
+## *customTokenUrl	{String}*
+> URL to use for the (2nd leg) Token request
+
+<br />
+
+## *tenant		{String)*
+> Tenant GUID or Domain
+
+<br />
+
+## *clientId		{String}*
+> GUID provided by your server
+
+<br />
+
+## *clientSecret		{String}*
+> GUID provided by your server
+
+<br />
+
+## *scope 		{String}*
+> List of scopes to authorize. Each seperated by a space
+
+<br />
+
+## *redirectUrl		{String}*
+> URL configured in your server
+
+<br />
+
+## *responseType		{String}*
+> `code` (default)
+
+<br />
+
+## *grantType		{String}*
+> `authorization_code` (default)
+
+<br />
+
+## *customTitleText	{String}*
+> Text to use in the TitleBar of the iOS/Android App
+
+<br />
+
+## *saveTokensToTiProperties	{BOOL}*
+> `true` - saves the token to Ti Properties so that it is accessible throughout the app and available after restarts
+
+<br /><br />
+
+# Properties passed in w/ .authorize() Method
 ##  *prompt	    {BOOL}*
 > Show UI
 
@@ -78,7 +140,8 @@ function onSuccess(authResults){
 
 <br /><br />
 
-# Extra Innings
+
+# Extra 
 In my use case, my Identity Server expires my tokens after a period of time.  I wanted to capture when my refresh token was going to expire and upon resuming my app, if the expiration time was in the next 10 minutes, I wanted to go ahead and renew the token before the user got into using the app.  
 <br />
 
