@@ -39,7 +39,11 @@ function _open(prompt, url, customTitleText, action, redirectUrl, allowClose, on
 	callback && $.webview.addEventListener('beforeload', webviewBeforeLoad);
 
 	if (OS_IOS) {
-		$.win.open();
+		$.win.open({
+			modal: true,
+			modalStyle: Ti.UI.iOS.MODAL_PRESENTATION_FORMSHEET,
+			forceModal: true
+		});
 		$.adalWidgetIosWindow.title = customTitleText;
 		if (_allowClose) {
 			addButton = Ti.UI.createButton({ systemButton: Ti.UI.iOS.SystemButton.CANCEL });
