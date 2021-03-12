@@ -2,7 +2,7 @@
  * Define/Style in your app.tss
  */
 "Window": {
-	backgroundColor: "#f7f7f7"
+	backgroundColor: "white"
 },
 "Window[platform=android]": {
 	theme: "Theme.NoActionBar",
