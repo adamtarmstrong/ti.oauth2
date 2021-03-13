@@ -61,6 +61,7 @@ function _open(prompt, url, customTitleText, action, redirectUrl, allowClose, on
 function webviewBeforeLoad(e) {
 	"use strict";
 	if (e && e.url) {
+		console.log(e.url);
 		/**
 		* Success, return the appropriate authCode
 		*/
@@ -79,9 +80,13 @@ function webviewBeforeLoad(e) {
 			/**
 			 * If logging out
 			 */
-		} else if ((e.url == _redirecturl) && (_action == "logout")) {
+		} else if (e.url == _url && _action == "logout") {
+			console.log('drin');
+			setTimeout(() => {
+				_callback && _callback(null, e);
+				_close();
+			}, 1000);
 			//TODO: Need to workout a logout, session clearing, mechanism here.  For now - just closing
-			_close();
 		}
 	}
 }

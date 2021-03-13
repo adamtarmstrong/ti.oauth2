@@ -13,6 +13,8 @@ var _clientId,     		// <-- GUID supplied by Azure
 	_customServer,		// <-- BOOL to determine use of Custom Server or MS/Azure Server
 	_customAuthUrl,		// <-- Url to use for Custom Server Auth
 	_customTokenUrl,		// <-- Url to use for Custom Server Token
+	_customLogoutUrl,		// <-- Url to use for Cookies
+	_customCookieUrl,		// <-- Url to use for Cookies
 	_prompt,				// <-- Passed in during .authorize().  true - shows dialog on top of all Windows.   false - hides dialog
 	_allowClose,			// <-- Passed in during .authorize().  used to determine whether to allow exit or not
 	_cancelCallback,		// <-- Passed in during .authorize().  callback executed on cancel()
@@ -46,11 +48,12 @@ var _adalWebView = Alloy.createWidget('ti.oauth2', 'adalWebview');
 	_customServer = _params.customServer || false;
 	_customAuthUrl = _params.customAuthUrl || null;
 	_customTokenUrl = _params.customTokenUrlarams || null;
-	_saveTokensToTiProperties = _params.saveTokensToTiProperties || false;
+	_customLogoutUrl = _params._customLogoutUrl || null;
+	_customCookieUrl = _params.customCookieUrl || null;
 })($.args);
 
 //Empty function used if a user forgets, or elects not, to define a function for onCancel. 
-function empty() { Ti.API.info("EMPTY CALLBACK"); }
+function empty() { console.info("EMPTY CALLBACK"); }
 
 /**
  * Opens the WebView for authenticating against Azure AD.
@@ -59,16 +62,17 @@ function empty() { Ti.API.info("EMPTY CALLBACK"); }
 function _authorize(prompt, _onSuccess, _onError, allowClose, _onCancel) {
 	_allowClose = (allowClose) ? true : false;
 	_prompt = (prompt) ? true : false;
+
 	if (_onCancel === undefined) {
 		_cancelCallback = empty;
 	} else {
 		_cancelCallback = _onCancel;
 	}
-	console.log('_state', _state);
+
 	_getUserAuthorization(function (err, result) {
 		if (err) {
-			//_onError && _onError(err) || Ti.API.error(err.message);
-			_onError(err) || Ti.API.error(err.message);
+			//_onError && _onError(err) || console.error(err.message);
+			_onError(err) || console.error(err.message);
 		} else {
 			_getBearerToken(result.code, function (err, result) {
 				if (err) {
@@ -99,7 +103,6 @@ function _getUserAuthorization(callback) {
 		*/
 		if (_customServer) {
 			var url = String.format(_customAdalAuthUrl, _customAuthUrl, _clientId, _responseType, encodeURIComponent(_scope), encodeURIComponent(_redirectUrl), _state);
-			console.log(url);
 		} else {
 			var url = _tenant ? String.format(_azureAdalTenantAuthUrl, _tenant, _clientId, _responseType, encodeURIComponent(_scope), encodeURIComponent(_redirectUrl)) :
 				String.format(_azureAdalAuthUrl, _clientId, _responseType, encodeURIComponent(_scope), encodeURIComponent(_redirectUrl));
@@ -113,18 +116,63 @@ function _getUserAuthorization(callback) {
 				/**
 				* Ooops! We hit a roadbloack, make sure your configured right with Azure.
 				*/
-				Ti.API.info('WIDGET[ti.oauth2] Authorization Error');
+				console.info('WIDGET[ti.oauth2] Authorization Error');
 				callback && callback(err);
 			}
 			else {
-				Ti.API.info('WIDGET[ti.oauth2] Authorization Successful');
+				console.info('WIDGET[ti.oauth2] Authorization Successful');
 				callback && callback(null, result);
 			}
 		});
 	} else {
-		Ti.API.error("Missing Parameters.  Must provide clientId, responseType, scope, && redirectUrl");
+		console.error("Missing Parameters.  Must provide clientId, responseType, scope and redirectUrl");
 	}
 }
+
+/**
+ * Log Out current user
+ * @private
+ */
+function _logout(prompt, _onSuccess, _onError, allowClose, _onCancel) {
+	_allowClose = (allowClose) ? true : false;
+	_prompt = (prompt) ? true : false;
+
+	if (_onCancel === undefined) {
+		_cancelCallback = empty;
+	} else {
+		_cancelCallback = _onCancel;
+	}
+
+	if (_customLogoutUrl && _customCookieUrl) {
+
+		const accessResponse = Ti.App.Properties.getObject('access-response');
+		if (!accessResponse) {
+			console.error("No ID-Token for logout");
+			return;
+		}
+
+		var xhr = Ti.Network.createHTTPClient();
+		xhr.clearCookies(_customCookieUrl);
+
+		let logoutURL = _customLogoutUrl + "?id_token_hint=" + accessResponse.id_token;
+		console.log(logoutURL);
+
+		_adalWebView.open(_prompt, logoutURL, _customTitleText, "logout", _redirectUrl, _allowClose, _cancelCallback, function (err, result) {
+			if (err) {
+				console.info('WIDGET[ti.oauth2] Logout Error');
+				_onError && _onError(err);
+			}
+			else {
+				console.info('WIDGET[ti.oauth2] Logout Successful');
+				_onSuccess && _onSuccess(null, result);
+			}
+		});
+	} else {
+		console.error("Missing Parameters.  Must provide customLogoutUrl and customCookieUrl");
+	}
+
+}
+exports.logout = _logout;
 
 /**
  * Retrieves the Azure Bearer Token
@@ -161,10 +209,8 @@ function _getBearerToken(_authCode, callback) {
 				* Success! Return the access and refresh tokens to calling function
 				*/
 				if (this.status == 200) {
-					var response = JSON.parse(this.responseText); Ti.API.info("ADAL responseText: " + JSON.stringify(response));
-					if (_saveTokensToTiProperties) {
-						Ti.App.Properties.setString('access-token', response.access_token);
-					}
+					var response = JSON.parse(this.responseText); console.info("ADAL responseText: " + JSON.stringify(response));
+					Ti.App.Properties.setObject('access-response', response);
 					callback && callback(null, response);
 				}
 			},
@@ -180,23 +226,6 @@ function _getBearerToken(_authCode, callback) {
 		xhr.send(bodyParms);
 	}
 }
-
-/**
- * Log Out current user
- * @private
- */
-function _logout() {
-	Ti.API.info("Logging Out!");
-	//TODO: This needs more work.  Not being used right now
-	if (OS_IOS) {
-		var xhr = Ti.Network.createHTTPClient();
-		xhr.clearCookies("https://login.microsoftonline.com");
-
-	} else if (OS_ANDROID) {
-		//Ti.Network.removeAllHTTPCookies();
-	}
-}
-exports.logout = _logout;
 
 /**
  * Closes the WebView for authenticating against Azure AD.
@@ -234,6 +263,17 @@ Object.defineProperty($, 'clientSecret', {
 	},
 	set: function _setClientKey(key) {
 		_clientSecret = key;
+	}
+});
+/**
+ * State Property
+ */
+Object.defineProperty($, 'state', {
+	get: function _getState() {
+		return _state;
+	},
+	set: function _setState(key) {
+		_state = key;
 	}
 });
 /**
@@ -291,17 +331,7 @@ Object.defineProperty($, 'customTitleText', {
 		_customTitleText = title;
 	}
 });
-/**
- * Window TitleBar Text Property
- */
-Object.defineProperty($, 'saveTokensToTiProperties', {
-	get: function _getSaveTokensToTiProperties() {
-		return _saveTokensToTiProperties;
-	},
-	set: function _setSaveTokensToTiProperties(tokens) {
-		_saveTokensToTiProperties = tokens;
-	}
-});
+
 /**
  * Use Custom Server Property:  {BOOL}
  */
@@ -333,5 +363,27 @@ Object.defineProperty($, 'customTokenUrl', {
 	},
 	set: function _setCustomTokenUrl(tokenUrl) {
 		_customTokenUrl = tokenUrl;
+	}
+});
+/**
+ * Custom Server Cookie URL Property:	{STRING}
+ */
+Object.defineProperty($, 'customCookieUrl', {
+	get: function _getCustomCookieUrl() {
+		return _customCookieUrl;
+	},
+	set: function _setCustomCookieUrl(cookieUrl) {
+		_customCookieUrl = cookieUrl;
+	}
+});
+/**
+ * Custom Server Cookie URL Property:	{STRING}
+ */
+Object.defineProperty($, 'customLogoutUrl', {
+	get: function _getCustomLogoutUrl() {
+		return _customLogoutUrl;
+	},
+	set: function _setCustomLogoutUrl(logoutUrl) {
+		_customLogoutUrl = logoutUrl;
 	}
 });
